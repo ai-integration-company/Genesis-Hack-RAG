@@ -1,6 +1,15 @@
 version: "3.8"
 services:
 
+  telegram-bot:
+    build: ./src/telegram_bot
+    container_name: telegram_bot
+    restart: unless-stopped
+    networks:
+      - genesis-network
+    depends_on:
+      - vector
+
   vector:
     build: ./src/vector
     container_name: vector

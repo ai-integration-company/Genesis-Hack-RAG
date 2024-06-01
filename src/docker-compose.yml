@@ -1,6 +1,0 @@
-services:
-  telegram-bot:
-    build: telegram_bot/
-    environment:
-      - API_TOKEN=${API_TOKEN}
-    restart: unless-stopped

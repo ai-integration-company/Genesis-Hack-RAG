@@ -2,7 +2,12 @@ import os
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
 
-API_TOKEN = os.getenv('API_TOKEN')
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+API_TOKEN = os.environ.get("API_TOKEN")
 
 bot = AsyncTeleBot(API_TOKEN)
 
@@ -51,4 +56,3 @@ async def send_welcome(message):
 
 
 asyncio.run(bot.polling())
-
