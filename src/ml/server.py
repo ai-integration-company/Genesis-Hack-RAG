@@ -8,19 +8,26 @@ from chromadb.config import Settings
 from langchain_chroma import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings.gigachat import GigaChatEmbeddings
+from yandex_chain import YandexEmbeddings
+from yandex_chain import YandexLLM
 
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnablePassthrough
+from langchain_core.prompts import ChatPromptTemplate
+
+from models import TextRequest
 from utlis import get_text_chunks
 
 load_dotenv()
-API_TOKEN = os.environ.get("API_TOKEN")
+API_KEY = os.environ.get("API_KEY")
+FOLDER_ID = os.environ.get("FOLDER_ID")
 
 app = FastAPI()
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
 
-embeddings = GigaChatEmbeddings(
-    credentials=API_TOKEN, verify_ssl_certs=False
+embeddings = YandexEmbeddings(
+    folder_id=FOLDER_ID, api_key=API_KEY,
 )
 
 client = chromadb.HttpClient(host="chroma", port=8000, settings=Settings(allow_reset=True))
@@ -30,21 +37,46 @@ langchain_chroma = Chroma(
     collection_name="data",
     embedding_function=embeddings,
 )
+llm = YandexLLM(folder_id=FOLDER_ID, api_key=API_KEY)
 
 
-@app.get("/")
+@app.get("/ping")
 def ping() -> str:
     return "pong"
 
 
 @app.post("/load_text")
-def load_text(text: str):
+def load_text(text: TextRequest):
     try:
-        chunks = get_text_chunks(text, text_splitter)
+        chunks = get_text_chunks(text.text, text_splitter)
         langchain_chroma.add_texts(chunks)
         return Response(status_code=200)
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/question")
+def question(text: TextRequest):
+    try:
+        template = """Answer the question in short based only on the following context:
+        {context}
+
+        Question: {question}
+        """
+        prompt = ChatPromptTemplate.from_template(template)
+
+        chain = (
+                {"context": langchain_chroma.as_retriever(), "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+        )
+
+        return {"answer": chain.invoke(text.text)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 

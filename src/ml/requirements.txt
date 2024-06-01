@@ -1,6 +1,8 @@
 fastapi
 pydantic
 uvicorn
-gigachain
-chromadb
 python-dotenv
+langchain_community
+yandex_chain
+chromadb
+langchain-chroma
