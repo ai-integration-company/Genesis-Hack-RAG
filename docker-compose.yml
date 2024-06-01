@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+
+  vector:
+    build: ./src/vector
+    container_name: vector
+    ports:
+      - 8888:80
+    depends_on:
+      - db
+    networks:
+      - genesis-network
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - genesis-network
+
+volumes:
+  pgdata:
+
+
+networks:
+  genesis-network:
+    driver: bridge
