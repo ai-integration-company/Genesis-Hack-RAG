@@ -45,15 +45,15 @@ def gen_markup():
 
 
 def handle_keyboard_callbacks(message) -> bool:
-    if message.text.lower() == 'clear chat history':
+    if message.text.lower() == 'очистить историю чата':
         db.clear_history(message.from_user.id)
         bot.send_message(message.chat.id, "История чата очищена.")
         return True
-    if message.text.lower() == 'i want to ask a question':
+    if message.text.lower() == 'задать вопрос':
         bot.set_state(message.from_user.id, MyStates.answering_questions, message.chat.id)
         bot.send_message(message.chat.id, "Какой вопрос вы хотите задать?")
         return True
-    if message.text.lower() == 'i want to add info':
+    if message.text.lower() == 'добавить информацию':
         bot.set_state(message.from_user.id, MyStates.getting_info, message.chat.id)
         bot.send_message(message.chat.id, "Какую информацию вы хотите добавить?")
         return True
