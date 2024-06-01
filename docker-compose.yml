@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     networks:
       - genesis-network
+    depends_on:
+      - ml
 
   chroma:
     image: ghcr.io/chroma-core/chroma:latest
@@ -19,7 +21,7 @@ services:
       - 8000:8000
     networks:
       - genesis-network
-  
+
   ml:
     build: ./src/ml
     container_name: ml
@@ -28,6 +30,8 @@ services:
       - 3000:3000
     networks:
       - genesis-network
+    depends_on:
+      - chroma
 
 volumes:
   index_data:
