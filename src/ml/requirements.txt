@@ -6,3 +6,4 @@ langchain_community
 yandex_chain
 chromadb
 langchain-chroma
+spacy==3.7.0

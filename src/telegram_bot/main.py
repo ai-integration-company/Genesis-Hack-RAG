@@ -1,19 +1,14 @@
 import os
 import asyncio
-
-from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
-import db
-
-load_dotenv()
-API_TOKEN = os.getenv("API_TOKEN")
-DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
+API_TOKEN = os.getenv('API_TOKEN')
 
 bot = AsyncTeleBot(API_TOKEN)
+
+DOWNLOAD_DIR = 'downloads'
+if not os.path.exists(DOWNLOAD_DIR):
+    os.makedirs(DOWNLOAD_DIR)
 
 
 async def save_file(document, file_info):
@@ -23,33 +18,13 @@ async def save_file(document, file_info):
         new_file.write(downloaded_file)
 
 
-def gen_markup():
-    markup = ReplyKeyboardMarkup(row_width=1)
-    markup.add(KeyboardButton("Clear Chat History"))
-    return markup
-
-
 async def infer(prompt):
-    response = f"Text: {prompt}"
-    return response
-
-
-async def process_text(message):
-    if message.text.lower() == 'clear chat history':
-        db.clear_history(message.from_user.id)
-        await bot.send_message(message.chat.id, "Chat history cleared.")
-        return
-    else:
-        response = await infer(message.text)
-        db.save_message(message.from_user.id, message.text, response)
-        await bot.send_message(message.chat.id,
-                               response,
-                               reply_markup=gen_markup())
+    return f"Text: {prompt}"
 
 
 @bot.message_handler(content_types=['text'])
 async def handle_text(message):
-    await process_text(message)
+    await bot.send_message(message.chat.id, await infer(message.text))
 
 
 @bot.message_handler(content_types=['document'])
@@ -60,8 +35,9 @@ async def handle_docs(message):
             file_info = await bot.get_file(document.file_id)
             await save_file(document, file_info)
             await bot.send_message(message.chat.id, "PDF received and saved successfully.")
+
             if message.caption:
-                await process_text(message)
+                await bot.send_message(message.chat.id, await infer(message.caption))
         else:
             await bot.send_message(message.chat.id, "Please send a PDF file.")
     except Exception as e:
@@ -71,9 +47,7 @@ async def handle_docs(message):
 
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message):
-    await bot.send_message(message.chat.id, "Hi! Please send a query and I'll try to help you.")
+    await bot.send_message(message.chat.id, "Hi! Send me a PDF file and I will save it.")
 
 
-if __name__ == '__main__':
-    db.init()
-    asyncio.run(bot.polling())
+asyncio.run(bot.polling())
