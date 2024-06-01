@@ -3,7 +3,6 @@ import logging
 
 import requests
 from dotenv import load_dotenv
-# from telebot.async_telebot import AsyncTeleBot
 from telebot import TeleBot, custom_filters
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from telebot.handler_backends import State, StatesGroup  # States
@@ -39,24 +38,24 @@ def save_file(document, file_info):
 
 def gen_markup():
     markup = ReplyKeyboardMarkup(row_width=1)
-    markup.add(KeyboardButton("Clear Chat History"))
-    markup.add(KeyboardButton("I want to ask a question"))
-    markup.add(KeyboardButton("I want to add info"))
+    markup.add(KeyboardButton("Очистить историю чата"))
+    markup.add(KeyboardButton("Задать вопрос"))
+    markup.add(KeyboardButton("Добавить информацию"))
     return markup
 
 
 def handle_keyboard_callbacks(message) -> bool:
     if message.text.lower() == 'clear chat history':
         db.clear_history(message.from_user.id)
-        bot.send_message(message.chat.id, "Chat history cleared.")
+        bot.send_message(message.chat.id, "История чата очищена.")
         return True
     if message.text.lower() == 'i want to ask a question':
         bot.set_state(message.from_user.id, MyStates.answering_questions, message.chat.id)
-        bot.send_message(message.chat.id, "Please ask a question.")
+        bot.send_message(message.chat.id, "Какой вопрос вы хотите задать?")
         return True
     if message.text.lower() == 'i want to add info':
         bot.set_state(message.from_user.id, MyStates.getting_info, message.chat.id)
-        bot.send_message(message.chat.id, "Please send the text you want to add.")
+        bot.send_message(message.chat.id, "Какую информацию вы хотите добавить?")
         return True
     return False
 
@@ -90,11 +89,11 @@ def handle_text_info(message):
     response = requests.post("http://ml:3000/load_text", json={"text": message.text})
     if response.status_code == 200:
         bot.send_message(message.chat.id,
-                         "Text received successfully.",
+                         "Информация успешно добавлена в базу знаний.",
                          reply_markup=gen_markup())
     else:
         bot.send_message(message.chat.id,
-                         "An error occurred while processing the text.",
+                         "Произошла ошибка при добавлении информации.",
                          reply_markup=gen_markup())
 
 
@@ -120,7 +119,7 @@ def send_welcome(message):
     logger.info(f"User {message.from_user.id}. Starting the bot.")
     bot.set_state(message.from_user.id, MyStates.getting_info, message.chat.id)
     bot.send_message(message.chat.id,
-                     "Hi! Please send a query and I'll try to help you.",
+                     "Здравствуйте! Выберите режим, в котором вы хотите работать с помощью кнопки.",
                      reply_markup=gen_markup())
 
 
