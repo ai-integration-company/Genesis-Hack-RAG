@@ -1,12 +1,10 @@
 import os
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
-from telebot.asyncio_handler_backends import State, StatesGroup
-from telebot.asyncio_storage import StateMemoryStorage
 
 API_TOKEN = os.getenv('API_TOKEN')
 
-bot = AsyncTeleBot(API_TOKEN, state_storage=StateMemoryStorage())
+bot = AsyncTeleBot(API_TOKEN)
 
 DOWNLOAD_DIR = 'downloads'
 if not os.path.exists(DOWNLOAD_DIR):
