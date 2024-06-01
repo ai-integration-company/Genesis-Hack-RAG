@@ -24,6 +24,8 @@ services:
     build: ./src/ml
     container_name: ml
     restart: unless-stopped
+    ports:
+      - 3000:3000
     networks:
       - genesis-network
 
