@@ -1,1 +1,1 @@
-from .split import get_text_chunks
+from .split import get_text_chunks, extract_metadata

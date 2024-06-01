@@ -16,11 +16,13 @@ from langchain.schema.runnable import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 
 from models import TextRequest
-from utlis import get_text_chunks
+from utlis import get_text_chunks, extract_metadata
+
 
 load_dotenv()
 API_KEY = os.environ.get("API_KEY")
 FOLDER_ID = os.environ.get("FOLDER_ID")
+
 
 app = FastAPI()
 
@@ -58,6 +60,7 @@ def load_text(text: TextRequest):
 
 @app.post("/question")
 def question(text: TextRequest):
+
     try:
         template = """Answer the question in short based only on the following context:
         {context}
@@ -66,19 +69,9 @@ def question(text: TextRequest):
         """
         prompt = ChatPromptTemplate.from_template(template)
 
-        chain = (
-                {"context": langchain_chroma.as_retriever(), "question": RunnablePassthrough()}
-                | prompt
-                | llm
-                | StrOutputParser()
-        )
+        chain = ({"context": langchain_chroma.as_retriever(filters=extract_metadata(text)),
+                  "question": RunnablePassthrough()} | prompt | llm | StrOutputParser())
 
-        return {"answer": chain.invoke(text.text)}
+        return {"answer": chain.invoke(text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
-
-
