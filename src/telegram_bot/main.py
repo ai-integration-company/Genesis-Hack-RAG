@@ -1,6 +1,4 @@
 import os
-import asyncio
-from telebot.async_telebot import AsyncTeleBot
 import logging
 
 import requests
@@ -10,14 +8,17 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from telebot.handler_backends import State, StatesGroup  # States
 from telebot.storage import StateMemoryStorage
 
+import db
+
+load_dotenv()
+
 API_TOKEN = os.getenv('API_TOKEN')
 
-bot = AsyncTeleBot(API_TOKEN)
+bot = TeleBot(API_TOKEN)
 
 DOWNLOAD_DIR = 'downloads'
 if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
-
 
 state_storage = StateMemoryStorage()
 bot = TeleBot(API_TOKEN, state_storage=state_storage)
@@ -37,7 +38,6 @@ def save_file(document, file_info):
     file_path = os.path.join(DOWNLOAD_DIR, document.file_name)
     with open(file_path, 'wb') as new_file:
         new_file.write(downloaded_file)
-
 
 
 def gen_markup():
@@ -89,7 +89,6 @@ def handle_text_info(message):
         logger.info(f"User {message.from_user.id}. Process callback")
         return
 
-
     logger.info(f"User {message.from_user.id}. Sending text to ML service.")
     response = requests.post("http://ml:3000/load_text", json={"text": message.text})
     if response.status_code == 200:
@@ -121,7 +120,6 @@ def handle_docs(message):
 
 
 @bot.message_handler(commands=['start', 'help'])
-
 def send_welcome(message):
     logger.info(f"User {message.from_user.id}. Starting the bot.")
     bot.set_state(message.from_user.id, MyStates.getting_info, message.chat.id)
