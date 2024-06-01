@@ -7,35 +7,18 @@ services:
     restart: unless-stopped
     networks:
       - genesis-network
-    depends_on:
-      - vector
 
-  vector:
-    build: ./src/vector
-    container_name: vector
-    ports:
-      - 8888:80
-    depends_on:
-      - db
-    networks:
-      - genesis-network
-
-  db:
-    image: pgvector/pgvector:pg16
-    container_name: postgres
-    environment:
-      POSTGRES_DB: "${POSTGRES_DB}"
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - index_data:/chroma/.chroma/index
     ports:
-      - "5432:5432"
+      - 8000:8000
     networks:
       - genesis-network
 
 volumes:
-  pgdata:
+  index_data:
 
 
 networks:
