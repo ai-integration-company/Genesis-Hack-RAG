@@ -40,6 +40,7 @@ langchain_chroma = Chroma(
     embedding_function=embeddings,
 )
 llm = YandexLLM(folder_id=FOLDER_ID, api_key=API_KEY)
+llm.temperature = 0
 
 
 @app.get("/ping")
