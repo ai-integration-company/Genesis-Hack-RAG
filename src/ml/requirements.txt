@@ -1,0 +1,6 @@
+fastapi
+pydantic
+uvicorn
+gigachain
+chromadb
+python-dotenv

@@ -19,6 +19,13 @@ services:
       - 8000:8000
     networks:
       - genesis-network
+  
+  ml:
+    build: ./src/ml
+    container_name: ml
+    restart: unless-stopped
+    networks:
+      - genesis-network
 
 volumes:
   index_data:
