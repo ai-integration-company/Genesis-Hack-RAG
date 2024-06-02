@@ -13,7 +13,7 @@ services:
   chroma:
     image: ghcr.io/chroma-core/chroma:latest
     volumes:
-      - chroma:/chroma/.chroma/index
+      - ./chroma:/chroma
     environment:
       - IS_PERSISTENT=TRUE
       - ALLOW_RESET=TRUE
