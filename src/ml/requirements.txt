@@ -10,4 +10,4 @@ langchain-chroma
 pymupdf
 ocrmypdf
 spacy==3.7.0
-
+python-multipart

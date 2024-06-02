@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN python -m spacy download ru_core_news_sm
 
+RUN apt-get update && \
+    apt-get install -y tesseract-ocr ghostscript tesseract-ocr-rus
+
 EXPOSE 3000
 
 
