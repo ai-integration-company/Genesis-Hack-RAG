@@ -81,8 +81,8 @@ def load_pdf(file: UploadFile = File(...)):
 
         documents = loader.load()
         text = "\n".join([doc.page_content for doc in documents])
-        chunks = get_text_chunks(text, text_splitter)
-        langchain_chroma.add_texts(chunks)
+        chunks, metadatas = split_chunks_and_metadata(get_text_chunks(text, text_splitter))
+        langchain_chroma.add_texts(texts=chunks, metadatas=metadatas)
         return Response(status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
