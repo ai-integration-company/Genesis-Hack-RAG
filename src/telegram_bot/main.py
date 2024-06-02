@@ -48,6 +48,7 @@ def handle_keyboard_callbacks(message) -> bool:
     if message.text.lower() == 'очистить историю чата':
         db.clear_history(message.from_user.id)
         bot.send_message(message.chat.id, "История чата очищена.")
+        requests.get("http://ml:3000/clear_history")
         return True
     if message.text.lower() == 'задать вопрос':
         bot.set_state(message.from_user.id, MyStates.answering_questions, message.chat.id)
@@ -61,7 +62,14 @@ def handle_keyboard_callbacks(message) -> bool:
 
 
 def process_question(message):
-    response = requests.post("http://ml:3000/question", json={"text": message.text}).json()['answer']
+    response = requests.post("http://ml:3000/question", json={"text": message.text})
+
+    if response.status_code != 200:
+        bot.send_message(message.chat.id, "Произошла ошибка при обработке вопроса.")
+        db.save_message(message.from_user.id, message.text, "ERR")
+        return
+
+    response = response.json()['answer']
     db.save_message(message.from_user.id, message.text, response)
     bot.send_message(message.chat.id,
                      response,
@@ -120,7 +128,7 @@ def handle_docs(message):
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     logger.info(f"User {message.from_user.id}. Starting the bot.")
-    bot.set_state(message.from_user.id, MyStates.getting_info, message.chat.id)
+    bot.set_state(message.from_user.id, MyStates.answering_questions, message.chat.id)
     bot.send_message(message.chat.id,
                      "Здравствуйте! Выберите режим, в котором вы хотите работать с помощью кнопки.",
                      reply_markup=gen_markup())
