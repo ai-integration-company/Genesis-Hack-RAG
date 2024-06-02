@@ -70,25 +70,22 @@ def load_text(text: TextRequest):
 @app.post("/load_pdf")
 def load_pdf(file: UploadFile = File(...)):
 
-    try:
-        with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp_path = tmp.name
-            # Copy the uploaded file content to the temp file
-            with open(tmp_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+    with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp_path = tmp.name
+        # Copy the uploaded file content to the temp file
+        with open(tmp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-        if is_scans(tmp_path):
-            loader = MyLoader(tmp_path, extract_images=True)
-        else:
-            loader = PyMuPDFLoader(tmp_path)
+    if is_scans(tmp_path):
+        loader = MyLoader(tmp_path, extract_images=True)
+    else:
+        loader = PyMuPDFLoader(tmp_path)
 
-        documents = loader.load()
-        text = "\n".join([doc.page_content for doc in documents])
-        chunks, metadatas = split_chunks_and_metadata(get_text_chunks(text, text_splitter))
-        langchain_chroma.add_texts(texts=chunks, metadatas=metadatas)
-        return Response(status_code=200)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    documents = loader.load()
+    text = "\n".join([doc.page_content for doc in documents])
+    chunks, metadatas = split_chunks_and_metadata(get_text_chunks(text, text_splitter))
+    langchain_chroma.add_texts(texts=chunks, metadatas=metadatas)
+    return Response(status_code=200)
 
 
 @app.post("/question")

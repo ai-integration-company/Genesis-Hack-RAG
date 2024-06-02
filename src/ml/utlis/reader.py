@@ -51,6 +51,7 @@ def ocr_the_page(page):
         outbytes,
         language="rus",
         output_type="pdf",
+        force_ocr=True
     )
     ocr_pdf = pymupdf.open("pdf", outbytes.getvalue())
     text = ocr_pdf[0].get_text()
