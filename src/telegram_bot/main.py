@@ -58,6 +58,15 @@ async def process_question(message):
                            reply_markup=gen_markup())
 
 
+@bot.message_handler(commands=['start', 'help'])
+async def send_welcome(message):
+    logger.info(f"User {message.from_user.id}. Starting the bot.")
+    await bot.send_message(message.chat.id,
+                           "Здравствуйте! Задайте вопрос или пришлите PDF файл, который нужно обработать."
+                           "Для очистки истории чата нажмите кнопку в меню бота.",
+                           reply_markup=gen_markup())
+
+
 @bot.message_handler(content_types=['text'])
 async def handle_text_question(message):
     logger.info(f"User {message.from_user.id} sent a text.")
@@ -90,14 +99,6 @@ async def handle_docs(message):
         logger.error(f"User {message.from_user.id}. Error while saving the file.")
         await bot.send_message(message.chat.id, "Произошла ошибка при обработке файла.")
         print(f"Error: {e}")
-
-
-@bot.message_handler(commands=['start', 'help'])
-async def send_welcome(message):
-    logger.info(f"User {message.from_user.id}. Starting the bot.")
-    await bot.send_message(message.chat.id,
-                           "Здравствуйте! Задайте вопрос или пришлите PDF файл, который нужно обработать.",
-                           reply_markup=gen_markup())
 
 
 if __name__ == '__main__':
