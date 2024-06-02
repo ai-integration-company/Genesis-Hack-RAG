@@ -52,6 +52,7 @@ def handle_keyboard_callbacks(message) -> bool:
     if message.text.lower() == 'очистить историю чата':
         db.clear_history(message.from_user.id)
         bot.send_message(message.chat.id, "История чата очищена.")
+        requests.get("http://ml:3000/clear_history")
         return True
     if message.text.lower() == 'задать вопрос':
         bot.set_state(message.from_user.id, MyStates.answering_questions, message.chat.id)
@@ -65,12 +66,7 @@ def handle_keyboard_callbacks(message) -> bool:
 
 
 def process_question(message):
-    user_history = db.get_user_history(message.from_user.id)
-    response = requests.post("http://ml:3000/question",
-                             json={
-                                 "text": message.text,
-                                 "history": user_history
-                             })
+    response = requests.post("http://ml:3000/question", json={"text": message.text}).json()['answer']
 
     if response.status_code != 200:
         bot.send_message(message.chat.id, "Произошла ошибка при обработке вопроса.")
