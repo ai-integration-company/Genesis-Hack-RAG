@@ -63,7 +63,9 @@ async def send_welcome(message):
     logger.info(f"User {message.from_user.id}. Starting the bot.")
     await bot.send_message(message.chat.id,
                            "Здравствуйте! Задайте вопрос или пришлите PDF файл, который нужно обработать."
-                           "Для очистки истории чата нажмите кнопку в меню бота.",
+                           "Для очистки истории чата нажмите кнопку в меню бота."
+                           "При загрузке PDF файлов отправляйте их без подписи и по одному."
+                           "Для отображения этой подсказки отправьте /help",
                            reply_markup=gen_markup())
 
 
