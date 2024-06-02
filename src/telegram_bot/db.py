@@ -1,6 +1,5 @@
 import os
 import sqlite3
-from typing import Tuple, List
 
 from dotenv import load_dotenv
 
@@ -42,15 +41,3 @@ def clear_history(user_id):
     ''', (user_id,))
     conn.commit()
     conn.close()
-
-
-def get_user_history(user_id) -> List[Tuple[str, str]]:
-    conn = sqlite3.connect(USER_HISTORY_DB)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT message_text, bot_reply FROM messages WHERE user_id = ?
-    ''', (user_id,))
-    history = cursor.fetchall()
-    conn.close()
-
-    return history
