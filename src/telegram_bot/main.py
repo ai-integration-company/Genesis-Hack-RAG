@@ -66,7 +66,7 @@ def handle_keyboard_callbacks(message) -> bool:
 
 
 def process_question(message):
-    response = requests.post("http://ml:3000/question", json={"text": message.text}).json()['answer']
+    response = requests.post("http://ml:3000/question", json={"text": message.text})
 
     if response.status_code != 200:
         bot.send_message(message.chat.id, "Произошла ошибка при обработке вопроса.")
