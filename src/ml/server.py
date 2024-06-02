@@ -11,14 +11,15 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from yandex_chain import YandexEmbeddings
 from yandex_chain import YandexLLM
 
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough
-from langchain_core.prompts import ChatPromptTemplate
-from typing import Dict, List, Any
-
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
 
 import shutil
 from tempfile import NamedTemporaryFile
+
 from langchain_community.document_loaders import PyMuPDFLoader
 
 from models import TextRequest
@@ -46,6 +47,8 @@ langchain_chroma = Chroma(
 )
 llm = YandexLLM(folder_id=FOLDER_ID, api_key=API_KEY)
 llm.temperature = 0
+
+history = ChatMessageHistory()
 
 
 @app.get("/ping")
@@ -103,25 +106,58 @@ def question(text: TextRequest):
 
     filters = [f for f in [name_filter, date_filter, company_filter] if f]
 
+    search_kwargs = {"k": 5}
+
     if len(filters) > 1:
-        combined_filter = {"$or": filters}
+        search_kwargs["filter"] = {"$or": filters}
     elif len(filters) == 1:
-        combined_filter = filters[0]
-    else:
-        combined_filter = None
+        search_kwargs["filter"] = filters[0]
+
+    contextualize_q_system_prompt = """Given a chat history and the latest user question \
+    which might reference context in the chat history, formulate a standalone question \
+    which can be understood without the chat history. Do NOT answer the question, \
+    just reformulate it if needed and otherwise return it as is."""
+    contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", contextualize_q_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+    history_aware_retriever = create_history_aware_retriever(
+        llm, langchain_chroma.as_retriever(search_kwargs=search_kwargs), contextualize_q_prompt,
+    )
 
     template = """Answer the question in short based only on the following context:
         {context}
 
-        Question: {question}
+        Question: {input}
         """
-    prompt = ChatPromptTemplate.from_template(template)
+    qa_prompt = ChatPromptTemplate.from_template(template)
+    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
-    if combined_filter:
-        chain = ({"context": langchain_chroma.as_retriever(search_kwargs={'k': 5, 'filter': combined_filter}),
-                  "question": RunnablePassthrough()} | prompt | llm | StrOutputParser())
-    else:
-        chain = ({"context": langchain_chroma.as_retriever(),
-                  "question": RunnablePassthrough()} | prompt | llm | StrOutputParser())
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-    return {"answer": chain.invoke(text.text)}
+    conversational_rag_chain = RunnableWithMessageHistory(
+        rag_chain,
+        lambda _: history,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+        output_messages_key="answer",
+    )
+
+    return {
+        "answer": conversational_rag_chain.invoke(
+            {"input": text.text}, config={"configurable": {"session_id": "42"}}
+        )["answer"]
+    }
+
+
+@app.get("/clear_history")
+def clear_history():
+    global history
+    try:
+        history = ChatMessageHistory()
+        return Response(status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
