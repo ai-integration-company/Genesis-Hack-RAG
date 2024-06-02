@@ -16,10 +16,6 @@ API_TOKEN = os.getenv('API_TOKEN')
 
 bot = TeleBot(API_TOKEN)
 
-DOWNLOAD_DIR = 'downloads'
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
-
 state_storage = StateMemoryStorage()
 bot = TeleBot(API_TOKEN, state_storage=state_storage)
 
@@ -35,9 +31,9 @@ class MyStates(StatesGroup):
 
 def save_file(document, file_info):
     downloaded_file = bot.download_file(file_info.file_path)
-    file_path = os.path.join(DOWNLOAD_DIR, document.file_name)
-    with open(file_path, 'wb') as new_file:
-        new_file.write(downloaded_file)
+    files = {'file': (document.file_name, downloaded_file, 'application/pdf')}
+    response = requests.post("http://ml:3000/load_pdf", files=files)
+    return response.status_code == 200
 
 
 def gen_markup():
@@ -101,21 +97,23 @@ def handle_text_info(message):
                          reply_markup=gen_markup())
 
 
-@bot.message_handler(content_types=['document'])
+@bot.message_handler(state='*', content_types=['document'])
 def handle_docs(message):
     try:
         document = message.document
         if document.mime_type == 'application/pdf':
 
             file_info = bot.get_file(document.file_id)
-            save_file(document, file_info)
-            bot.send_message(message.chat.id, "PDF received and saved successfully.")
+            if save_file(document, file_info):
+                bot.send_message(message.chat.id, "PDF файл сохранен.")
+            else:
+                bot.send_message(message.chat.id, "Произошла ошибка при обработке файла.")
             if message.caption:
                 process_question(message)
         else:
-            bot.send_message(message.chat.id, "Please send a PDF file.")
+            bot.send_message(message.chat.id, "Пожалуйста, пришлите PDF файл.")
     except Exception as e:
-        bot.send_message(message.chat.id, "An error occurred while processing the file.")
+        bot.send_message(message.chat.id, "Произошла ошибка при обработке файла.")
         print(f"Error: {e}")
 
 
