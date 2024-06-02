@@ -11,8 +11,12 @@ from telebot.storage import StateMemoryStorage
 import db
 
 load_dotenv()
-API_TOKEN = os.getenv("API_TOKEN")
-DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
+
+API_TOKEN = os.getenv('API_TOKEN')
+
+bot = TeleBot(API_TOKEN)
+
+DOWNLOAD_DIR = 'downloads'
 if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
 
@@ -102,6 +106,7 @@ def handle_docs(message):
     try:
         document = message.document
         if document.mime_type == 'application/pdf':
+
             file_info = bot.get_file(document.file_id)
             save_file(document, file_info)
             bot.send_message(message.chat.id, "PDF received and saved successfully.")
